@@ -1,4 +1,3 @@
-use std;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -14,8 +13,11 @@ struct Paths {
 
 fn create_log_file(log_file_path: &std::path::PathBuf) {
     let mut log_file = File::create(log_file_path).expect("Failed to create log file");
-    
-    log_file.write_all(b"{log_file_path.file_name() -> {log_file_path.parent()}").expect("Failed to write to log file");
+
+    let log_content = format!("{:?} -> {:?}", log_file_path.file_name(), log_file_path.parent());
+
+    log_file.write_all(log_content.as_bytes()).expect("Failed to write to log file");
+    println!("Log file created at: {}", log_file_path.display());
 }
 
 fn main() {
@@ -29,12 +31,19 @@ fn main() {
     let mut finished_process = false;
 
     while !finished_process {
-        if destination_path.exists() {
+        if !destination_path.exists() {
+            fs::create_dir_all(destination_path.parent().unwrap()).expect("Failed to create destination directory");
+
+            create_log_file(&log_file_path);
+            println!("File moved successfully");
+            finished_process = true;
+        } else {
             println!("Destination path already exists, substitute [y/N]?");
             io::stdin().read_line(&mut answer).expect("Failed to read line");
     
             if answer.trim() == "y" || answer.trim() == "Y" {
                 println!("Substituting destination path");
+                fs::remove_file(&destination_path).expect("Failed to remove file");
                 fs::rename(&source_path, &destination_path).expect("Failed to move file");
 
                 create_log_file(&log_file_path);
@@ -43,14 +52,8 @@ fn main() {
             } else if answer.trim() == "n" || answer.trim() == "N" || answer.trim().is_empty() {
                 println!("Exiting without substitution");
             } else {
-                println!("Invalid input, retry");
+                println!("Invalid input, retry");   
             }
-        } else {
-            fs::rename(&source_path, &destination_path).expect("Failed to move file");
-
-            create_log_file(&log_file_path);
-            println!("File moved successfully");
-            finished_process = true;
         }
     }
 }
