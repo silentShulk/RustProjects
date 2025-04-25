@@ -1,5 +1,5 @@
 use std::fs;
-use std::fs::File;
+use std::fs::OpenOptions;
 use std::io;
 use std::io::Write;
 use clap::Parser;
@@ -11,11 +11,15 @@ struct Paths {
     path3: std::path::PathBuf,
 }
 
-fn create_log_file(log_file_path: &std::path::PathBuf) {
+fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
     fs::create_dir_all(log_file_path.parent().unwrap()).expect("Failed to create parent folder");
-    let mut log_file = File::create(log_file_path).expect("Failed to create log file");
+    let mut log_file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(log_file_path)
+        .expect("Failed to open or create log file");
 
-    let log_content = format!("{} -> {}", log_file_path.file_name().unwrap().to_string_lossy(), log_file_path.parent().unwrap().display());
+    let log_content = format!("{} -> {}\n", source_file_path.file_name().unwrap().to_string_lossy(), destination_file_path.parent().unwrap().display());
 
     log_file.write_all(log_content.as_bytes()).expect("Failed to write to log file");
     println!("Log file created at: {}", log_file_path.display());
@@ -37,7 +41,7 @@ fn main() {
             fs::create_dir_all(&destination_path).expect("Failed to create destination directory");
             fs::rename(&source_path, &final_path).expect("Failed to move file");
 
-            create_log_file(&log_file_path);
+            create_log_file(&log_file_path, &source_path, &final_path);
             println!("File moved successfully");
             finished_process = true;
         } else {
@@ -50,7 +54,6 @@ fn main() {
                 fs::remove_file(&final_path).expect("Failed to remove old file");
                 fs::rename(&source_path, &final_path).expect("Failed to move file");
 
-                create_log_file(&log_file_path);
                 println!("File moved successfully");
                 finished_process = true;
             } else if answer.trim() == "n" || answer.trim() == "N" || answer.trim().is_empty() {
