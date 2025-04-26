@@ -1,14 +1,19 @@
 use std::fs;
 use std::fs::OpenOptions;
+use std::fs::File;
 use std::io;
 use std::io::Write;
 use clap::Parser;
 
 #[derive(Parser)]
+#[command(author, version, about, disable_version_flag=true)]
 struct Paths {
-    path1: std::path::PathBuf,
-    path2: std::path::PathBuf,
-    path3: std::path::PathBuf,
+    #[arg(short, long, help = "Print version and exit", action = clap::ArgAction::SetTrue)]
+    version: bool,
+
+    path_to_source_file: Option<std::path::PathBuf>,
+    path_to_destination: Option<std::path::PathBuf>,
+    path_to_log_file: Option<std::path::PathBuf>,
 }
 
 fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
@@ -27,41 +32,74 @@ fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::p
 
 fn main() {
     let args = Paths::parse();
-    let source_path = args.path1;
-    let destination_path = args.path2;
-    let log_file_path = args.path3;
-    let final_path = destination_path.join(source_path.file_name().unwrap());
 
     let mut answer = String::new();
 
     let mut finished_process = false;
 
+    if args.version {
+        println!("Version: {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
+
+    let source_path = args.path_to_source_file.expect("Missing path");
+    let destination_path = args.path_to_destination.expect("Missing path");
+    let log_file_path = args.path_to_log_file.expect("Missing path");
+    let final_path = destination_path.join(source_path.file_name().unwrap());
+
     while !finished_process {
-        if !final_path.exists() {
+        if !source_path.exists() {
+            print!("Source file ({}) does not exist, create an empty text file in the indicated destination directory? [y/N] ", source_path.display());
+            io::stdout().flush().unwrap();
+            io::stdin().read_line(&mut answer).expect("Failed to read line");
+
+            match answer.trim() {
+                "y" | "Y" => {
+                    File::create(&final_path).expect("Failed to create empty text file");
+                    println!("Created empty text file at {}", &final_path.display());
+
+                    create_log_file(&log_file_path, &source_path, &destination_path);
+
+                    finished_process = true;
+                }
+
+                "n" | "N" | "" => {
+                    println!("Exiting without doing anything");
+                    finished_process = true;
+                }
+
+                _ => {
+                    println!("Invalid input, please retry.");
+                }
+            }
+        } else if final_path.exists() {
+            print!("Destination path already exists, substitute [y/N]: ");
+            io::stdout().flush().unwrap();
+            io::stdin().read_line(&mut answer).expect("Failed to read line");
+    
+            match answer.trim() {
+                "y" | "Y" => {
+                    fs::remove_file(&final_path).expect("Failed to remove already existing file");
+                    fs::rename(&source_path, &final_path).expect("Failed to move file");
+                    create_log_file(&log_file_path, &source_path, &final_path);
+                    println!("File moved successfully.");
+                    finished_process = true;
+                }
+                "n" | "N" | "" => {
+                    println!("Exiting without substitution.");
+                    finished_process = true;
+                }
+                _ => {
+                    println!("Invalid input, please retry.");
+                }
+            }
+        } else {
             fs::create_dir_all(&destination_path).expect("Failed to create destination directory");
             fs::rename(&source_path, &final_path).expect("Failed to move file");
 
             create_log_file(&log_file_path, &source_path, &final_path);
             println!("File moved successfully");
             finished_process = true;
-        } else {
-            print!("Destination path already exists, substitute [y/N]: ");
-            io::stdout().flush().unwrap();
-            io::stdin().read_line(&mut answer).expect("Failed to read line");
-    
-            if answer.trim() == "y" || answer.trim() == "Y" {
-                println!("Substituting destination path");
-                fs::remove_file(&final_path).expect("Failed to remove old file");
-                fs::rename(&source_path, &final_path).expect("Failed to move file");
-
-                println!("File moved successfully");
-                finished_process = true;
-            } else if answer.trim() == "n" || answer.trim() == "N" || answer.trim().is_empty() {
-                println!("Exiting without substitution");
-                finished_process = true;
-            } else {
-                println!("Invalid input, retry");   
-            }
         }
     }
 }
