@@ -114,7 +114,7 @@ fn main() {
         println!("\nCan't move something into a file");
         return;
     }
-    if log_file_path.extension().unwrap() == "txt" {
+    if log_file_path.extension().unwrap() != "txt" {
         println!("\nLog file must be a .txt file");
         return;
     }
