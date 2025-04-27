@@ -26,34 +26,37 @@ fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::p
         .append(true)
         .create(true)
         .open(log_file_path)
-        .expect("Failed to open or create log file");
+        .expect("\nFailed to open or create log file");
 
     let log_content = format!("{} -> {}\n", source_file_path.file_name().unwrap().to_string_lossy(), destination_file_path.parent().unwrap().display());
 
-    log_file.write_all(log_content.as_bytes()).expect("Failed to write to log file");
+    log_file.write_all(log_content.as_bytes()).expect("\nFailed to write to log file");
     println!("Log file created at: {}", log_file_path.display());
 }
 
 fn move_in_new_folder(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) -> bool {
     if source_file_path.is_dir() && destination_file_path.parent().unwrap().is_file() {
-        println!("Can't move a folder into a file");
+        println!("\nCan't move a folder into a file");
+        return false;
+    } else if !source_file_path.exists() {
+        println!("\nThe file you want to move doesn't exist");
         return false;
     } else {
-        create_dir_all(destination_file_path.parent().unwrap()).expect("Failed to create destination directory");
-        rename(source_file_path, destination_file_path).expect("Failed to move file");
-        println!("File/Folder moved succesfully");
+        create_dir_all(destination_file_path.parent().unwrap()).expect("\nFailed to create destination directory");
+        rename(source_file_path, destination_file_path).expect("\nFailed to move file");
+        println!("\nFile/Folder moved succesfully");
         return true;
     }
 }
 
 fn substitute_file(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
     if destination_file_path.is_file() {
-        remove_file(destination_file_path).expect("Failed to remove already existing file");
+        remove_file(destination_file_path).expect("\nFailed to remove already existing file");
     } else {
-        remove_dir_all(destination_file_path).expect("Failed to remove already existing folder");
+        remove_dir_all(destination_file_path).expect("\nFailed to remove already existing folder");
     }
-    rename(source_file_path, destination_file_path).expect("Failed to move file");
-    println!("File moved successfully.");
+    rename(source_file_path, destination_file_path).expect("\nFailed to move file");
+    println!("\nFile moved successfully.");
 }
 
 fn main() {
@@ -73,7 +76,7 @@ fn main() {
         None => {
             println!(
                 "Missing path be sure to enter:\n
-                -The path to the file/folder you want to move\n-
+                -The path to the file/folder you want to move\n
                 -The path to the folder you want the file to be moved to (doesn't need to exist)\n
                 -The path to the folder you want the log file to be created / where the log file is (the name of the log file must be included)");
             return;
@@ -84,7 +87,7 @@ fn main() {
         None => {
             println!(
                 "Missing path be sure to enter:\n
-                -The path to the file/folder you want to move\n-
+                -The path to the file/folder you want to move\n
                 -The path to the folder you want the file to be moved to (doesn't need to exist)\n
                 -The path to the folder you want the log file to be created / where the log file is (the name of the log file must be included)");
             return;
@@ -95,7 +98,7 @@ fn main() {
         None => {
             println!(
                 "Missing path be sure to enter:\n
-                -The path to the file/folder you want to move\n-
+                -The path to the file/folder you want to move\n
                 -The path to the folder you want the file to be moved to (doesn't need to exist)\n
                 -The path to the folder you want the log file to be created / where the log file is (the name of the log file must be included)"
             );
@@ -104,7 +107,7 @@ fn main() {
     };
 
     if source_path == destination_path {
-        println!("Can't move a folder/file into itself");
+        println!("\nCan't move a folder/file into itself");
         return;
     }
     let final_path = destination_path.join(source_path.file_name().unwrap());
@@ -114,13 +117,13 @@ fn main() {
 
     while !finished_process {
         if source_path == final_path {
-            println!("Don't move the log file to where it already is");
+            println!("\nDon't move something to where it already is");
             finished_process = true;
         }
         else if final_path.exists() {
-            print!("Destination path already exists, substitute [y/N]: ");
+            print!("\nDestination path already exists, substitute [y/N]: ");
             io::stdout().flush().unwrap();
-            io::stdin().read_line(&mut answer).expect("Failed to read line");
+            io::stdin().read_line(&mut answer).expect("\nFailed to read line");
     
             match answer.trim() {
                 "y" | "Y" => {
@@ -131,11 +134,11 @@ fn main() {
                     finished_process = true;
                 }
                 "n" | "N" | "" => {
-                    println!("Exiting without substitution.");
+                    println!("\nExiting without substitution.");
                     finished_process = true;
                 }
                 _ => {
-                    println!("Invalid input, please retry.");
+                    println!("\nInvalid input, please retry.");
                 }
             }
         } else {
@@ -144,7 +147,7 @@ fn main() {
             if valid_operation {
                 create_log_file(&log_file_path, &source_path, &final_path);
             }
-            
+
             finished_process = true;
         }
     }
