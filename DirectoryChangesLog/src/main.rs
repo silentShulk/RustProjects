@@ -102,7 +102,11 @@ fn main() {
     let mut finished_process = false;
 
     while !finished_process {
-        if final_path.exists() {
+        if source_path == final_path {
+            println!("Coglione che cazzo provi a spostare un file nel folder in cui si trova");
+            finished_process = true;
+        }
+        else if final_path.exists() {
             print!("Destination path already exists, substitute [y/N]: ");
             io::stdout().flush().unwrap();
             io::stdin().read_line(&mut answer).expect("Failed to read line");
