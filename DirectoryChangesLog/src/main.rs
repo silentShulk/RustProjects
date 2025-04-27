@@ -6,7 +6,7 @@ use clap::Parser;
 
 #[derive(Parser)]
 #[command(author, version, disable_version_flag=true)]
-struct Paths {
+struct Arguments {
     #[arg(short='v', long="version", help="Print version and exit", action = clap::ArgAction::SetTrue)]
     version: bool,
     #[arg(short='a', long="author", help="Print author and exit", action = clap::ArgAction::SetTrue)]
@@ -31,10 +31,10 @@ fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::p
     println!("Log file created at: {}", log_file_path.display());
 }
 
-fn move_file_in_new_folder(path_to_file: &std::path::PathBuf) {
-    fs::create_dir_all(path_to_file.parent().unwrap()).expect("Failed to create destination directory");
-    fs::rename(path_to_file.file_name().unwrap(), path_to_file).expect("Failed to move file");
-    println!("File moved succesfully");
+fn move_in_new_folder(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
+    fs::create_dir_all(destination_file_path.parent().unwrap()).expect("Failed to create destination directory");
+    fs::rename(source_file_path, destination_file_path).expect("Failed to move file");
+    println!("File/Folder moved succesfully");
 }
 
 fn substitute_file(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
@@ -44,10 +44,7 @@ fn substitute_file(source_file_path: &std::path::PathBuf, destination_file_path:
 }
 
 fn main() {
-    let args = Paths::parse();
-
-    let mut answer = String::new();
-    let mut finished_process = false;
+    let args = Arguments::parse();
 
     if args.version {
         println!("Version: {}", env!("CARGO_PKG_VERSION"));
@@ -58,10 +55,44 @@ fn main() {
         return;
     }
 
-    let source_path = args.path_to_source_file.expect("Missing path");
-    let destination_path = args.path_to_destination.expect("Missing path");
-    let log_file_path = args.path_to_log_file.expect("Missing path");
+    let source_path = match args.path_to_source_file {
+        Some(path) => { path }
+        None => {
+            println!(
+                "Missing path be sure to enter:\n
+                -The path to the file/folder you want to move\n-
+                -The path to the folder you want the file to be moved to (doesn't need to exist)\n
+                -The path to the folder you want the log file to be created / where the log file is (the name of the log file must be included)");
+            return;
+        }
+    };
+    let destination_path = match args.path_to_destination {
+        Some(path) => { path }
+        None => {
+            println!(
+                "Missing path be sure to enter:\n
+                -The path to the file/folder you want to move\n-
+                -The path to the folder you want the file to be moved to (doesn't need to exist)\n
+                -The path to the folder you want the log file to be created / where the log file is (the name of the log file must be included)");
+            return;
+        }
+    };
+    let log_file_path = match args.path_to_log_file {
+        Some(path) => { path }
+        None => {
+            println!(
+                "Missing path be sure to enter:\n
+                -The path to the file/folder you want to move\n-
+                -The path to the folder you want the file to be moved to (doesn't need to exist)\n
+                -The path to the folder you want the log file to be created / where the log file is (the name of the log file must be included)"
+            );
+            return;
+        }
+    };
     let final_path = destination_path.join(source_path.file_name().unwrap());
+
+    let mut answer = String::new();
+    let mut finished_process = false;
 
     while !finished_process {
         if final_path.exists() {
@@ -86,11 +117,12 @@ fn main() {
                 }
             }
         } else {
-            move_file_in_new_folder(&final_path);
+            move_in_new_folder(&source_path, &final_path);
 
             create_log_file(&log_file_path, &source_path, &final_path);
 
             finished_process = true;
         }
     }
+
 }
