@@ -114,6 +114,10 @@ fn main() {
         println!("\nCan't move something into a file");
         return;
     }
+    if log_file_path.extension().unwrap() == "txt" {
+        println!("\nLog file must be a .txt file");
+        return;
+    }
     let final_path = destination_path.join(source_path.file_name().unwrap());
 
     let mut answer = String::new();

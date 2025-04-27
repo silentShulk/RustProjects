@@ -8,5 +8,5 @@ HOW TO USE:
 
 2. Open a terminal window
 3. Type:  dcl <path to an existing file or folder> <path to the folder in which you want to put the file> <path to desired log file location>
-   The path to the log file must include the name of the log file
+   The path to the log file must include the name of the log file (must be .txt)
    Example:  dcl ~/sigma.txt ~/Ohio ~/Ohio/skibidi.txt
