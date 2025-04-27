@@ -20,7 +20,7 @@ struct Arguments {
     path_to_log_file: Option<std::path::PathBuf>,
 }
 
-fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
+fn create_log_file(log_file_path: &std::path::PathBuf, final_file_path: &std::path::PathBuf) {
     create_dir_all(log_file_path.parent().unwrap()).expect("Failed to create parent folder");
     let mut log_file = OpenOptions::new()
         .append(true)
@@ -28,7 +28,7 @@ fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::p
         .open(log_file_path)
         .expect("\nFailed to open or create log file");
 
-    let log_content = format!("{} -> {}\n", source_file_path.file_name().unwrap().to_string_lossy(), destination_file_path.parent().unwrap().display());
+    let log_content = format!("{} -> {}\n", final_file_path.file_name().unwrap().to_string_lossy(), final_file_path.parent().unwrap().display());
 
     log_file.write_all(log_content.as_bytes()).expect("\nFailed to write to log file");
     println!("Log file created at: {}", log_file_path.display());
@@ -106,8 +106,12 @@ fn main() {
         }
     };
 
-    if source_path == destination_path {
+    if source_path == destination_path{
         println!("\nCan't move a folder/file into itself");
+        return;
+    }
+    if destination_path.is_file() {
+        println!("\nCan't move something into a file");
         return;
     }
     let final_path = destination_path.join(source_path.file_name().unwrap());
@@ -129,7 +133,7 @@ fn main() {
                 "y" | "Y" => {
                     substitute_file(&source_path, &final_path);
 
-                    create_log_file(&log_file_path, &source_path, &final_path);
+                    create_log_file(&log_file_path, &final_path);
                     
                     finished_process = true;
                 }
@@ -145,7 +149,7 @@ fn main() {
             let valid_operation = move_in_new_folder(&source_path, &final_path);
 
             if valid_operation {
-                create_log_file(&log_file_path, &source_path, &final_path);
+                create_log_file(&log_file_path, &final_path);
             }
 
             finished_process = true;
