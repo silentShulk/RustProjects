@@ -1,4 +1,7 @@
-use std::fs;
+use std::fs::remove_dir_all;
+use std::fs::remove_file;
+use std::fs::create_dir_all;
+use std::fs::rename;
 use std::fs::OpenOptions;
 use std::io;
 use std::io::Write;
@@ -18,7 +21,7 @@ struct Arguments {
 }
 
 fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
-    fs::create_dir_all(log_file_path.parent().unwrap()).expect("Failed to create parent folder");
+    create_dir_all(log_file_path.parent().unwrap()).expect("Failed to create parent folder");
     let mut log_file = OpenOptions::new()
         .append(true)
         .create(true)
@@ -32,14 +35,18 @@ fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::p
 }
 
 fn move_in_new_folder(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
-    fs::create_dir_all(destination_file_path.parent().unwrap()).expect("Failed to create destination directory");
-    fs::rename(source_file_path, destination_file_path).expect("Failed to move file");
+    create_dir_all(destination_file_path.parent().unwrap()).expect("Failed to create destination directory");
+    rename(source_file_path, destination_file_path).expect("Failed to move file");
     println!("File/Folder moved succesfully");
 }
 
 fn substitute_file(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
-    fs::remove_file(destination_file_path).expect("Failed to remove already existing file");
-    fs::rename(source_file_path, destination_file_path).expect("Failed to move file");
+    if destination_file_path.is_file() {
+        remove_file(destination_file_path).expect("Failed to remove already existing file");
+    } else {
+        remove_dir_all(destination_file_path).expect("Failed to remove already existing folder");
+    }
+    rename(source_file_path, destination_file_path).expect("Failed to move file");
     println!("File moved successfully.");
 }
 
