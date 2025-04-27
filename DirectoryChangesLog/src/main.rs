@@ -34,10 +34,16 @@ fn create_log_file(log_file_path: &std::path::PathBuf, source_file_path: &std::p
     println!("Log file created at: {}", log_file_path.display());
 }
 
-fn move_in_new_folder(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
-    create_dir_all(destination_file_path.parent().unwrap()).expect("Failed to create destination directory");
-    rename(source_file_path, destination_file_path).expect("Failed to move file");
-    println!("File/Folder moved succesfully");
+fn move_in_new_folder(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) -> bool {
+    if source_file_path.is_dir() && destination_file_path.parent().unwrap().is_file() {
+        println!("Can't move a folder into a file");
+        return false;
+    } else {
+        create_dir_all(destination_file_path.parent().unwrap()).expect("Failed to create destination directory");
+        rename(source_file_path, destination_file_path).expect("Failed to move file");
+        println!("File/Folder moved succesfully");
+        return true;
+    }
 }
 
 fn substitute_file(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf) {
@@ -96,6 +102,11 @@ fn main() {
             return;
         }
     };
+
+    if source_path == destination_path {
+        println!("Can't move a folder/file into itself");
+        return;
+    }
     let final_path = destination_path.join(source_path.file_name().unwrap());
 
     let mut answer = String::new();
@@ -103,7 +114,7 @@ fn main() {
 
     while !finished_process {
         if source_path == final_path {
-            println!("Coglione che cazzo provi a spostare un file nel folder in cui si trova");
+            println!("Don't move the log file to where it already is");
             finished_process = true;
         }
         else if final_path.exists() {
@@ -128,10 +139,12 @@ fn main() {
                 }
             }
         } else {
-            move_in_new_folder(&source_path, &final_path);
+            let valid_operation = move_in_new_folder(&source_path, &final_path);
 
-            create_log_file(&log_file_path, &source_path, &final_path);
-
+            if valid_operation {
+                create_log_file(&log_file_path, &source_path, &final_path);
+            }
+            
             finished_process = true;
         }
     }
