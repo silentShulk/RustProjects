@@ -7,6 +7,7 @@ use std::io;
 use std::io::Write;
 use clap::Parser;
 
+//  Struct for managing arguments
 #[derive(Parser)]
 #[command(author, version, disable_version_flag=true)]
 struct Arguments {
@@ -20,11 +21,11 @@ struct Arguments {
     path_to_log_file: Option<std::path::PathBuf>,
 }
 
+// Creates the log file inside the folder indicated in log_file_path with the name indicated at the end of the path
 fn create_log_file(log_file_path: &std::path::PathBuf, final_file_path: &std::path::PathBuf) {
-    create_dir_all(log_file_path.parent().unwrap()).expect("Failed to create parent folder");
     let mut log_file = OpenOptions::new()
-        .append(true)
-        .create(true)
+        .create(true)   // If the file already exists opens it, if is
+        .append(true)   // Appends the text added to the file instead of overwriting the already existing text
         .open(log_file_path)
         .expect("\nFailed to open or create log file");
 
