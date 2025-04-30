@@ -1,5 +1,5 @@
 use std::path;
-use std::fs::{remove_dir_all, remove_file, create_dir_all, rename, OpenOptions};
+use std::fs::{remove_dir_all, remove_file, create_dir_all, rename, read_dir, OpenOptions};
 use std::io::{stdout, stdin, Write};
 use clap::Parser;
 
@@ -11,6 +11,8 @@ struct Arguments {
     version: bool,
     #[arg(short='a', long="author", help="Print author and exit", action = clap::ArgAction::SetTrue)]
     author: bool,
+    #[arg(short='c', long="contents", help="Move contents of folder instead of folder itself", action = clap::ArgAction::SetTrue)]
+    contents: bool,
 
     arg1: Option<path::PathBuf>,
     arg2: Option<path::PathBuf>,
@@ -61,11 +63,39 @@ fn paths_checks(paths: &Paths) -> bool {    // Path to where the log file will b
     return are_paths_invalid
 }
 
+fn move_contents_of_folder(folder_path: &path::PathBuf, folder_to_move_in: &Path) {
+    match read_dir(folder_path) {
+        Ok(contents) => {
+            for content in contents {
+                match content {
+                    Ok(entry) => {
+                        let entry_path = entry.path();
+                        rename(entry_path, folder_to_move_in).expect("\nFailed to move file");
+                    }
+                    Err(e) => {
+                        eprintln!("Couldn't read all contents of folder, {}", e)
+                    }
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("Couldn't read all contents of folder, {}", e)
+        }
+    }
+}
+
 // Moves a file or folder into a new folder , creating the new folder if it doesn't already exist
 fn move_in_new_folder(source_path: &path::PathBuf,    // Path to the file/folder that has to be moved
-                      new_path: &path::PathBuf) {     // New path of the moved file/folder (includes the name of the file/folder because it's its new path)
+                      new_path: &path::PathBuf,
+                      contents_flag: &bool) {     // New path of the moved file/folder (includes the name of the file/folder because it's its new path)
     create_dir_all(new_path.parent().unwrap()).expect("\nFailed to create destination directory");
-    rename(source_path, new_path).expect("\nFailed to move file");
+    if !contents_flag {
+        rename(source_path, new_path).expect("\nFailed to move file");
+    } else {
+        if source_path.is_dir() {
+            move_contents_of_folder(&source_path, &new_path.parent().unwrap())
+        }
+    }
     println!("\nFile/Folder moved succesfully");
 }
 
@@ -109,15 +139,7 @@ fn create_log_file(log_file_path: &path::PathBuf,      // Path to where the log 
 // ! MAIN
 fn main() {
     let args = Arguments::parse();    // Arguments retrived from the command written by the user
-    let paths = Paths {
-        path_to_source :get_path_if_given(args.arg1),    // First argument given by the user (should be source file/folder)
-        path_to_destination :get_path_if_given(args.arg2),    // Second argument given by the user (should be destination folder)
-        path_to_log: get_path_if_given(args.arg3),    // Third argument given by the user (should be log file)
-    };
-
-    // Immediate check of the validity of the paths
-    let mut finished_process = 
-        paths_checks(&paths);
+    let mut move_contents = false;
 
     // Flags 
     if args.version {
@@ -128,6 +150,20 @@ fn main() {
         println!("Author: {}", env!("CARGO_PKG_AUTHORS"));
         return;
     }
+    if args.contents {
+        move_contents = true;
+    }
+
+    // Retrieve paths from all the arguments
+    let paths = Paths {
+        path_to_source :get_path_if_given(args.arg1),    // First argument given by the user (should be source file/folder)
+        path_to_destination :get_path_if_given(args.arg2),    // Second argument given by the user (should be destination folder)
+        path_to_log: get_path_if_given(args.arg3),    // Third argument given by the user (should be log file)
+    };
+
+    // Immediate check of the validity of the paths
+    let mut finished_process = 
+        paths_checks(&paths);
 
     // Paths needed
     let source_path = paths.path_to_source;
@@ -141,16 +177,16 @@ fn main() {
 
     // ! Main loop
     while !finished_process {
-        // If there already is a file with the same name of the source file in the destination directory
-        // the user will decide what to do
         if !final_path.exists() {
             // Moves the source file/folder in the destination directory and logs the movement made
-            move_in_new_folder(&source_path, &final_path);
+            move_in_new_folder(&source_path, &final_path, &move_contents);
 
             create_log_file(&log_path, &final_path);
 
             finished_process = true;
         } else {
+            // If there already is a file with the same name of the source file in the destination directory
+            // the user will decide what to do
             print!("\nDestination path already exists, substitute [y/N]: ");
             stdout().flush().unwrap();
             stdin().read_line(&mut answer).expect("\nFailed to read line");
