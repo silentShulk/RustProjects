@@ -18,9 +18,9 @@ struct Arguments {
 }
 
 struct Paths {
-    path1: path::PathBuf,
-    path2: path::PathBuf,
-    path3: path::PathBuf, 
+    path_to_source: path::PathBuf,
+    path_to_destination: path::PathBuf,
+    path_to_log: path::PathBuf, 
 }
 
 // Checks if an Option<PathBuf> is None or Some -> the path if it is Some, else shuts down the process and warns the user
@@ -41,19 +41,19 @@ fn get_path_if_given(path: Option<path::PathBuf>) -> std::path::PathBuf {
 fn paths_checks(paths: &Paths) -> bool {    // Path to where the log file will be created
     let mut are_paths_invalid = false;
 
-    if paths.path1 == paths.path2{
+    if paths.path_to_source == paths.path_to_destination{
         println!("\nCan't move a folder/file into itself");
         are_paths_invalid = true;
     }
-    if paths.path2.is_file() {
+    if paths.path_to_destination.is_file() {
         println!("\nCan't move something into a file");
         are_paths_invalid = true;
     }
-    if paths.path3.extension().unwrap() != "txt" {
+    if paths.path_to_log.extension().unwrap() != "txt" {
         println!("\nLog file must be a .txt file");
         are_paths_invalid = true;
     }
-    if !paths.path1.exists() {
+    if !paths.path_to_source.exists() {
         println!("\nThe file you want to move doesn't exist");
         are_paths_invalid = true;
     }
@@ -90,8 +90,17 @@ fn create_log_file(log_file_path: &path::PathBuf,      // Path to where the log 
         .open(log_file_path)
         .expect("\nFailed to open or create log file");
 
-    let log_content = format!("{} -> {}\n", new_file_path.file_name().unwrap().to_string_lossy(), new_file_path.parent().unwrap().display());
-
+    let string_path = new_file_path.to_string_lossy();
+    let path_folders: Vec<&str> = string_path.split('/').collect();
+    let destination_folder = if path_folders.len() > 2 {
+        let third_last = path_folders[path_folders.len() - 3];
+        let second_last = path_folders[path_folders.len() - 2];
+        format!("{}/{}", third_last, second_last)
+    } else {
+        path_folders[path_folders.len() - 2].to_string()
+    };
+    
+    let log_content = format!("{} -> {}\n", new_file_path.file_name().unwrap().to_string_lossy(), destination_folder);
     log_file.write_all(log_content.as_bytes()).expect("\nFailed to write to log file");
     println!("Log file created at: {}", log_file_path.display());
 }
@@ -101,9 +110,9 @@ fn create_log_file(log_file_path: &path::PathBuf,      // Path to where the log 
 fn main() {
     let args = Arguments::parse();    // Arguments retrived from the command written by the user
     let paths = Paths {
-        path1 :get_path_if_given(args.arg1),    // First argument given by the user (should be source file/folder)
-        path2 :get_path_if_given(args.arg2),    // Second argument given by the user (should be destination folder)
-        path3: get_path_if_given(args.arg3),    // Third argument given by the user (should be log file)
+        path_to_source :get_path_if_given(args.arg1),    // First argument given by the user (should be source file/folder)
+        path_to_destination :get_path_if_given(args.arg2),    // Second argument given by the user (should be destination folder)
+        path_to_log: get_path_if_given(args.arg3),    // Third argument given by the user (should be log file)
     };
 
     // Immediate check of the validity of the paths
@@ -121,9 +130,9 @@ fn main() {
     }
 
     // Paths needed
-    let source_path = paths.path1;
-    let destination_path = paths.path2;
-    let log_path = paths.path3;
+    let source_path = paths.path_to_source;
+    let destination_path = paths.path_to_destination;
+    let log_path = paths.path_to_log;
     let final_path = destination_path.join(source_path.file_name().unwrap());    // Path of the file/folder after being moved
 
     // Answer of the user to any question
