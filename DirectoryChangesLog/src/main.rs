@@ -1,11 +1,6 @@
-use std::fs::remove_dir_all;
-use std::fs::remove_file;
-use std::fs::create_dir_all;
-use std::fs::rename;
-use std::fs::OpenOptions;
-use std::io::stdout;
-use std::io::stdin;
-use std::io::Write;
+use std::path;
+use std::fs::{remove_dir_all, remove_file, create_dir_all, rename, OpenOptions};
+use std::io::{stdout, stdin, Write};
 use clap::Parser;
 
 // Struct for managing arguments
@@ -17,14 +12,20 @@ struct Arguments {
     #[arg(short='a', long="author", help="Print author and exit", action = clap::ArgAction::SetTrue)]
     author: bool,
 
-    path_to_source_file: Option<std::path::PathBuf>,
-    path_to_destination: Option<std::path::PathBuf>,
-    path_to_log_file: Option<std::path::PathBuf>,
+    arg1: Option<path::PathBuf>,
+    arg2: Option<path::PathBuf>,
+    arg3: Option<path::PathBuf>,
+}
+
+struct Paths {
+    path1: path::PathBuf,
+    path2: path::PathBuf,
+    path3: path::PathBuf, 
 }
 
 // Checks if an Option<PathBuf> is None or Some -> the path if it is Some, else shuts down the process and warns the user
 //      path = Option<PathBuf> to be checked
-fn get_path_if_given(path: Option<std::path::PathBuf>) -> std::path::PathBuf {
+fn get_path_if_given(path: Option<path::PathBuf>) -> std::path::PathBuf {
     path.unwrap_or_else(|| {
         println!("
             \nMissing path. Be sure to enter:\n\
@@ -36,26 +37,23 @@ fn get_path_if_given(path: Option<std::path::PathBuf>) -> std::path::PathBuf {
     })
 }
 
-// Checks that the paths given won't cause any errors -> true if the paths where invalid, else false
-//      source_file_path -> Path to the file/folder that has to be moved
-//      destination_file_path -> Path to where the file/folder will be moved
-//      log_file_path -> Path to where the log file will be created
-fn paths_checks(source_file_path: &std::path::PathBuf, destination_file_path: &std::path::PathBuf, log_file_path: &std::path::PathBuf) -> bool {
+// Checks that the paths given won't cause any errors -> true if the paths are invalid, else false
+fn paths_checks(paths: &Paths) -> bool {    // Path to where the log file will be created
     let mut are_paths_invalid = false;
 
-    if source_file_path == destination_file_path{
+    if paths.path1 == paths.path2{
         println!("\nCan't move a folder/file into itself");
         are_paths_invalid = true;
     }
-    if destination_file_path.is_file() {
+    if paths.path2.is_file() {
         println!("\nCan't move something into a file");
         are_paths_invalid = true;
     }
-    if log_file_path.extension().unwrap() != "txt" {
+    if paths.path3.extension().unwrap() != "txt" {
         println!("\nLog file must be a .txt file");
         are_paths_invalid = true;
     }
-    if !source_file_path.exists() {
+    if !paths.path1.exists() {
         println!("\nThe file you want to move doesn't exist");
         are_paths_invalid = true;
     }
@@ -64,18 +62,16 @@ fn paths_checks(source_file_path: &std::path::PathBuf, destination_file_path: &s
 }
 
 // Moves a file or folder into a new folder , creating the new folder if it doesn't already exist
-//      source_path -> Path to the file/folder that has to be moved
-//      new_path -> New path of the moved file/folder (includes the name of the file/folder because it's its new path)
-fn move_in_new_folder(source_path: &std::path::PathBuf, new_path: &std::path::PathBuf) {
+fn move_in_new_folder(source_path: &path::PathBuf,    // Path to the file/folder that has to be moved
+                      new_path: &path::PathBuf) {     // New path of the moved file/folder (includes the name of the file/folder because it's its new path)
     create_dir_all(new_path.parent().unwrap()).expect("\nFailed to create destination directory");
     rename(source_path, new_path).expect("\nFailed to move file");
     println!("\nFile/Folder moved succesfully");
 }
 
 // Moves a file or folder in place of a file or folder of the same name found in the indicated directory
-//      source_file_path -> Path to the file/folder that will be moved substituing the other file
-//      file_to_substitute_path -> Path to the file to be substituted (the parent is where the source file will be moved)
-fn substitute_file(source_file_path: &std::path::PathBuf, file_to_substitute_path: &std::path::PathBuf) {
+fn substitute_file(source_file_path: &path::PathBuf,             // Path to the file/folder that will be moved substituing the other file
+                   file_to_substitute_path: &path::PathBuf) {    // Path to the file to be substituted (the parent is where the source file will be moved)
     if file_to_substitute_path.is_file() {
         remove_file(file_to_substitute_path).expect("\nFailed to remove already existing file");
     } else {
@@ -86,9 +82,8 @@ fn substitute_file(source_file_path: &std::path::PathBuf, file_to_substitute_pat
 }
 
 // Creates the log file inside the folder indicated in log_file_path with the name indicated at the end of the path
-//      log_file_path -> Path to where the log file will be created, ending with the name of the log file 
-//      new_file_path -> Path indicating where a file was moved, ending with its name
-fn create_log_file(log_file_path: &std::path::PathBuf, new_file_path: &std::path::PathBuf) {
+fn create_log_file(log_file_path: &path::PathBuf,      // Path to where the log file will be created, ending with the name of the log file 
+                   new_file_path: &path::PathBuf) {    // Path indicating where a file was moved, ending with its name
     let mut log_file = OpenOptions::new()
         .create(true)   // If the file already exists opens it, if is
         .append(true)   // Appends the text added to the file instead of overwriting the already existing text
@@ -105,6 +100,15 @@ fn create_log_file(log_file_path: &std::path::PathBuf, new_file_path: &std::path
 // ! MAIN
 fn main() {
     let args = Arguments::parse();    // Arguments retrived from the command written by the user
+    let paths = Paths {
+        path1 :get_path_if_given(args.arg1),    // First argument given by the user (should be source file/folder)
+        path2 :get_path_if_given(args.arg2),    // Second argument given by the user (should be destination folder)
+        path3: get_path_if_given(args.arg3),    // Third argument given by the user (should be log file)
+    };
+
+    // Immediate check of the validity of the paths
+    let mut finished_process = 
+        paths_checks(&paths);
 
     // Flags 
     if args.version {
@@ -117,16 +121,14 @@ fn main() {
     }
 
     // Paths needed
-    let source_path = get_path_if_given(args.path_to_source_file);
-    let destination_path = get_path_if_given(args.path_to_destination);
-    let log_path = get_path_if_given(args.path_to_log_file);
+    let source_path = paths.path1;
+    let destination_path = paths.path2;
+    let log_path = paths.path3;
     let final_path = destination_path.join(source_path.file_name().unwrap());    // Path of the file/folder after being moved
 
     // Answer of the user to any question
     let mut answer = String::new();
     // Variable that decides if the program will go on or stop
-    let mut finished_process = 
-        paths_checks(&source_path, &destination_path, &log_path);
 
     // ! Main loop
     while !finished_process {
