@@ -54,9 +54,6 @@ fn main() {
                 // Substitutes the file_folder in the destination with the source
                 functions::substitute_file(&source_path, &final_path);
 
-                // Logs what was changed in the log file
-                functions::create_log_file(&log_path, &final_path);
-
                 finished_process = true;
             } else {
                 println!("Exiting without substitution");

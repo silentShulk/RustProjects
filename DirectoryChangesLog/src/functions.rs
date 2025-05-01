@@ -117,7 +117,7 @@ pub fn move_contents_of_folder(source_folder_path: &path::PathBuf,     // Folder
 // Asks to the user a question that can be answered with yes or no
 pub fn ask_bool(question: String,       // Question that will be asked to the user
                 answer: &mut bool) {    // External variable that will be used to do something based on the answer
-    println!("{}", question);
+    print!("{}", question);
     stdout().flush().unwrap();
     
     let mut string_answer = String::new();
