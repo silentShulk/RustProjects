@@ -1,4 +1,5 @@
 use rustyline::DefaultEditor;
+mod functions;
 
 fn main() {
     let mut rl = DefaultEditor::new().unwrap();
@@ -12,9 +13,10 @@ fn main() {
                     continue;
                 }
 
-                rl.add_history_entry(line).expect("Failed to add to history");
+                rl.add_history_entry(&line).expect("Failed to add to history");
 
-                
+                let command_to_execute = functions::string_to_command(input);
+                functions::execute_command(&command_to_execute);
             }
 
             Err(_) => {
