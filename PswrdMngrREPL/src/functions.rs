@@ -23,7 +23,7 @@ pub fn execute_command(command: &Command) {
 }
 
 fn add_password() {
-    
+
 }
 
 fn get_password() {
