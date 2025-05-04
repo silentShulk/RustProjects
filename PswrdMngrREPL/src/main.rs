@@ -9,11 +9,13 @@ fn main() {
         match rl.readline("PswrdMngr>>") {
             Ok(line) => {
                 let input = line.trim();
+                rl.add_history_entry(&line).expect("Failed to add to history");
+
                 if input.is_empty() {
                     continue;
-                }
-
-                rl.add_history_entry(&line).expect("Failed to add to history");
+                } else if input == "exit" || input =="Exit" {
+                    break;
+                } 
 
                 let command_to_execute = functions::string_to_command(input);
                 functions::execute_command(&command_to_execute);
