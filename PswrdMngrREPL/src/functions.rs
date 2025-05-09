@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use aes_gcm::{Aes256Gcm, Key, Nonce};
-use aes_gcm::aead::{Aead, KeyInit};
-use rand::Rng;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, Write};
 use bincode;
+use std::error::Error;
 
 const SECRET_FILE_PATH: &str = "$HOME/.local/share/<your-app>/passwords.json";
 
@@ -25,24 +25,49 @@ pub fn string_to_command(input: &str) -> Command {
 pub fn execute_command(command: &Command) {
     match command.functionality.as_str() {
         "add-password" => add_password(&command.args),
-        "get-password" => get_password(&command.args),
+        "get-password" => get_password(&command.args[0]),
         _ => println!("Command not found: {}", command.functionality)
     }
 }
 
-fn add_password(args: Vec<String>) {
+pub fn load_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
+    match File::open(SECRET_FILE_PATH) {
+        Ok(secret_file) => {
+            let reader = BufReader::new(secret_file);
+            match bincode::decode_from_reader::<HashMap<String, String>, _, _>(reader, bincode::config::standard()) {
+                Ok(map) => { Ok(map) }
+                Err(er) => { Err(Box::new(er)) }
+            }
+        }
+        Err(er) => { Err(Box::new(er)) }
+    }
+}
+
+fn add_password(args: &Vec<String>, passwords_store: &mut HashMap<String, String>) {
     let password = &args[0];
     let service = &args[1];
 
-    let password_store: HashMap<String, String> = vec![(service, password)].iter().collect();
+    passwords_store.insert(service.to_string(), password.to_string());
+}  
+
+fn get_password(service_key: &String, passwords_store: &HashMap<String, String>) -> Result<String, Box<dyn Error>> {
+    match passwords_store.get(service_key) {
+        Some(value) => { Ok(value.to_string()) }
+        None => {
+            let error_message = String::from("No such service stored in memory");
+            Err(error_message.into())
+        }
+    }
 }
 
-fn get_password(args: &Vec<String>) {
+fn encrypt_and_save(filepath: &str, store: HashMap<String, String>) {
+    let encoded = bincode::encode_to_vec(store, bincode::config::standard())
+        .expect("Failed to serialize store");
 
-}
-
-fn encrypt_and_save(filepath: &str, key_bytes: &[u8; 32]) {
-    let serialized = bincode::encode_to_vec(store, bincode::config::Standard)
-    .expect("Failed to serialize");
-
+    let mut store_file = OpenOptions::new()
+        .create(true)   // If the file already exists opens it, if is
+        .append(true)   // Appends the text added to the file instead of overwriting the already existing text
+        .open(filepath)
+        .expect("\nFailed to store encoded passwords");
+    store_file.write_all(&encoded);
 }

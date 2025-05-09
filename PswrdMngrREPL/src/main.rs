@@ -1,15 +1,16 @@
+use functions::execute_command;
 use rustyline::DefaultEditor;
 mod functions;
 
 fn main() {
-    let mut rl = DefaultEditor::new().unwrap();
+    let mut editor = DefaultEditor::new().unwrap();
     println!("Welcome to the password manager! Type 'help' or 'exit'.");
 
     loop {
-        match rl.readline("PswrdMngr>>") {
+        match editor.readline("PswrdMngr>>") {
             Ok(line) => {
                 let input = line.trim();
-                rl.add_history_entry(&line).expect("Failed to add to history");
+                editor.add_history_entry(&line).expect("Failed to add to history");
 
                 if input.is_empty() {
                     continue;
@@ -19,6 +20,10 @@ fn main() {
 
                 let command_to_execute = functions::string_to_command(input);
                 functions::execute_command(&command_to_execute);
+
+                let passwords = functions::load_passwords().expect("Failed to retrieve passwords");
+
+                execute_command(&command_to_execute);
             }
 
             Err(_) => {
