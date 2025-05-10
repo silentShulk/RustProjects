@@ -1,4 +1,3 @@
-use functions::execute_command;
 use rustyline::DefaultEditor;
 mod functions;
 
@@ -19,11 +18,11 @@ fn main() {
                 } 
 
                 let command_to_execute = functions::string_to_command(input);
-                functions::execute_command(&command_to_execute);
 
-                let passwords = functions::load_passwords().expect("Failed to retrieve passwords");
+                let passwords = functions::load_passwords()
+                    .expect("Failed to retrieve passwords");
 
-                execute_command(&command_to_execute);
+                
             }
 
             Err(_) => {

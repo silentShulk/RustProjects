@@ -4,7 +4,7 @@ use std::io::{BufReader, Write};
 use bincode;
 use std::error::Error;
 
-const SECRET_FILE_PATH: &str = "$HOME/.local/share/<your-app>/passwords.json";
+const SECRET_FILE_PATH: &str = "$HOME/.local/share/PswrdMngr/passwords.json";
 
 pub struct Command {
     pub functionality: String,
@@ -22,14 +22,6 @@ pub fn string_to_command(input: &str) -> Command {
     command
 }
 
-pub fn execute_command(command: &Command) {
-    match command.functionality.as_str() {
-        "add-password" => add_password(&command.args),
-        "get-password" => get_password(&command.args[0]),
-        _ => println!("Command not found: {}", command.functionality)
-    }
-}
-
 pub fn load_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
     match File::open(SECRET_FILE_PATH) {
         Ok(secret_file) => {
@@ -43,14 +35,14 @@ pub fn load_passwords() -> Result<HashMap<String, String>, Box<dyn Error>> {
     }
 }
 
-fn add_password(args: &Vec<String>, passwords_store: &mut HashMap<String, String>) {
+pub fn add_password(args: &Vec<String>, passwords_store: &mut HashMap<String, String>) {
     let password = &args[0];
     let service = &args[1];
 
     passwords_store.insert(service.to_string(), password.to_string());
 }  
 
-fn get_password(service_key: &String, passwords_store: &HashMap<String, String>) -> Result<String, Box<dyn Error>> {
+pub fn get_password(service_key: &String, passwords_store: &HashMap<String, String>) -> Result<String, Box<dyn Error>> {
     match passwords_store.get(service_key) {
         Some(value) => { Ok(value.to_string()) }
         None => {
