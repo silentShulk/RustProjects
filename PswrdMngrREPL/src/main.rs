@@ -3,7 +3,7 @@ use std::io::{stdin, stdout, Write};
 mod functions;
 
 fn main() {
-    println!("Welcome to the password manager! Type 'help' or 'exit'.");
+    println!("\nWelcome to the password manager! Type 'help' or 'exit'.");
     let mut user_input = String::new();
 
     loop {
@@ -20,5 +20,7 @@ fn main() {
                 println!("Couldn't read line")
             }
         }
+
+        user_input = String::new();
     }
 }

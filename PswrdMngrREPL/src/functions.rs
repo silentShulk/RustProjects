@@ -26,9 +26,6 @@ let mut answer_to_confirmation = false;
 
     match operation.functionality.as_str() {
         "add-password" => {
-
-            println!("\n SKIBIDI \n");
-            
             ask_bool(
                 format!("Do you want to set {} as the password for {}? [y/N] ", operation.args[1], operation.args[0]),
                 &mut answer_to_confirmation);
@@ -37,7 +34,7 @@ let mut answer_to_confirmation = false;
                 true => {
                     match add_password(operation.args) {
                         Ok(_) => {
-                            println!("Succesfully added password");
+                            println!("Successfully added password");
                         }
                         Err(error) => {
                             println!("Failed to add password: {}", error)
@@ -50,15 +47,12 @@ let mut answer_to_confirmation = false;
             }
         }
         "get-password" => {
-
-            println!("\n SIGMA \n");
-
             let passwords = load_passwords().expect("Failed to load passwords");
             
-            match get_password(&operation.args[0], passwords) {
+            match get_password(&operation.args[0].trim().to_string(), passwords) {
                 Ok(password) => {
                     ask_bool(
-                        format!("Do you want to show the password?"),
+                        String::from("Do you want to print the password? [y/N] "),
                         &mut answer_to_confirmation);
 
                     match answer_to_confirmation {
@@ -76,13 +70,13 @@ let mut answer_to_confirmation = false;
             }
         }
         _ => {
-            println!("Inavalid operation, please retry")
+            println!("Invalid operation, please retry")
         }
     }
 }
 
-// Asks to the user a question that can be answered with yes or no
-pub fn ask_bool(question: String,       // Question that will be asked to the user
+// Asks the user a question that can be answered with yes or no
+pub fn ask_bool(question: String,       // Question that will be asked the user
                 answer: &mut bool) {    // External variable that will be used to do something based on the answer
     print!("{}", question);
     stdout().flush().unwrap();
@@ -122,17 +116,15 @@ pub fn load_passwords() -> Result<HashMap<String, String>, String> {
     let file_reader = BufReader::new(secret_file);
 
     let mut passwords_store: HashMap<String, String> = HashMap::new();
+    
     for line in file_reader.lines() {
         let line = line.expect("Failed to read line");
-
-        let password_service: Vec<&str> = line.split(',').collect();
-
+        let password_service: Vec<&str> = line.trim().split(',').collect();
         passwords_store.insert(password_service[0].to_string(), password_service[1].to_string());
     }
 
     Ok(passwords_store)
 }
-
 
 pub fn get_password(service_key: &String, passwords_store: HashMap<String, String>) -> Result<String, String> {
     match passwords_store.get(service_key) {
