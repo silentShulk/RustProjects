@@ -1,30 +1,14 @@
 use std::io::{stdin, stdout, BufRead, BufReader, Write};
 use std::fs::OpenOptions;
 use std::collections::HashMap;
-
+use std::process::Command;
 
 const SECRET_FILE_PATH: &str = "/home/cmarco/.local/share/PswrdMngr/passwords.txt";
-
-pub struct Command {
-    pub functionality: String,
-    pub args: Vec<String>,
-}
-
-pub fn string_to_command(input: &str) -> Command {
-    let subparts: Vec<&str> = input.split(' ').collect();
-
-    let command = Command {
-        functionality: subparts[0].to_string(),
-        args: subparts[1..].iter().map(|arg| arg.to_string()).collect(),
-    };
-
-    command
-}
 
 pub fn execute_command(operation: Command) {
 let mut answer_to_confirmation = false;
 
-    match operation.functionality.as_str() {
+    match operation.get_program().as_str() {
         "add-password" => {
             ask_bool(
                 format!("Do you want to set {} as the password for {}? [y/N] ", operation.args[1], operation.args[0]),

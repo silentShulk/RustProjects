@@ -1,5 +1,6 @@
-use functions::string_to_command;
+use std::env::args;
 use std::io::{stdin, stdout, Write};
+use std::process::Command;
 mod functions;
 
 fn main() {
@@ -12,7 +13,9 @@ fn main() {
 
         match stdin().read_line(&mut user_input) {
             Ok(_) => {
-                let command = string_to_command(&user_input);
+                let mut separated_input: Vec<&str> = user_input.split(" ").collect();
+                let command = Command::new(separated_input[0])
+                    .args(separated_input[1..separated_input.len() -2].iter());
                 
                 functions::execute_command(command);
             }
@@ -23,4 +26,4 @@ fn main() {
 
         user_input = String::new();
     }
-}
+    }
