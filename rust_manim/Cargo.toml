@@ -1,0 +1,12 @@
+[package]
+name = "rust_manim"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rust_manim"
+crate-type = ["rlib"]
+
+[dependencies]
+pyo3 = "0.25.1"
+clap = { version = "4", features = ["derive"] }
