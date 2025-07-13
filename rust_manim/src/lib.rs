@@ -7,7 +7,7 @@ use clap::Parser;
 struct VideoQuality {
     #[arg(short='l', long="quality-low", help="Render the animation at 480p 15 fps", action = clap::ArgAction::SetTrue)]
     low: bool,
-    #[arg(short='h', long="quality-high", help="Render the animation at 1080p 30 fps", action = clap::ArgAction::SetTrue)]
+    #[arg(short='s', long="quality-high", help="Render the animation at 1080p 30 fps", action = clap::ArgAction::SetTrue)]
     high: bool,
 }
 
@@ -32,16 +32,19 @@ struct Args {
     pub quality: VideoQuality,
 }
 
+
 #[pyclass]
 pub struct Animation {
     inner: Py<PyAny>,
 }
-
 #[pyclass]
 pub struct Circle {
-    pub inner: Py<PyAny>,
+    pub instance: Py<PyAny>,
 }
-
+#[pyclass]
+pub struct Square {
+    pub instance: Py<PyAny>,
+}
 #[pyclass]
 pub struct Scene {
     inner: Py<PyAny>,
@@ -56,7 +59,18 @@ impl Circle {
         let circle_class  = manim.getattr("Circle")?;
         let circle_mobject = circle_class.call0()?;
 
-        Ok( Circle {inner: circle_mobject.into()} )
+        Ok( Circle{ instance: circle_mobject.into() } )
+    }
+}
+#[pymethods]
+impl Square {
+    #[new]
+    pub fn new (py: Python) -> PyResult<Self> {
+        let manim = py.import("manim")?;
+        let square_class  = manim.getattr("Square")?;
+        let square_mobject = square_class.call0()?;
+
+        Ok( Square { instance: square_mobject.into() } )
     }
 }
 
@@ -69,6 +83,14 @@ impl Animation {
         let create_instance = create_animation.call1((mobject,))?;
 
         Ok(Animation {inner: create_instance.into()})
+    }
+    #[staticmethod]
+    pub fn uncreate (py: Python, mobject: Py<PyAny>) -> PyResult<Self> {
+        let manim = py.import("manim")?;
+        let uncreate_animation = manim.getattr("Uncreate")?;
+        let uncreate_instance = uncreate_animation.call1((mobject,))?;
+
+        Ok(Animation {inner: uncreate_instance.into()})
     }
 }
 
