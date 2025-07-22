@@ -32,11 +32,6 @@ struct Args {
     pub quality: VideoQuality,
 }
 
-
-#[pyclass]
-pub struct Animation {
-    inner: Py<PyAny>,
-}
 #[pyclass]
 pub struct Circle {
     pub instance: Py<PyAny>,
@@ -44,6 +39,22 @@ pub struct Circle {
 #[pyclass]
 pub struct Square {
     pub instance: Py<PyAny>,
+}
+#[pyclass]
+pub struct Dot {
+    pub instance: Py<PyAny>,
+}
+#[pyclass]
+pub struct Axes {
+    pub instance: Py<PyAny>,
+}
+#[pyclass]
+pub struct ParametricFunction {
+    pub instance: Py<PyAny>,
+}
+#[pyclass]
+pub struct Animation {
+    inner: Py<PyAny>,
 }
 #[pyclass]
 pub struct Scene {
@@ -62,6 +73,7 @@ impl Circle {
         Ok( Circle{ instance: circle_mobject.into() } )
     }
 }
+
 #[pymethods]
 impl Square {
     #[new]
@@ -71,6 +83,52 @@ impl Square {
         let square_mobject = square_class.call0()?;
 
         Ok( Square { instance: square_mobject.into() } )
+    }
+}
+
+#[pymethods]
+impl Dot {
+
+    #[new]
+    pub fn new (py: Python) -> PyResult<Self> {
+        let manim = py.import("manim")?;
+        let dot_class  = manim.getattr("Dot")?;
+        let dot_mobject = dot_class.call0()?;
+
+        Ok( Dot { instance: dot_mobject.into() } )
+    }
+}
+
+#[pymethods]
+impl Axes {
+    #[new]
+    pub fn new (py: Python) -> PyResult<Self> {
+        let manim = py.import("manim")?;
+        let axes_class  = manim.getattr("Axes")?;
+        let axes_mobject = axes_class.call0()?;
+
+        Ok( Axes { instance: axes_mobject.into() } )
+    }
+
+    pub fn plot (&self, py: Python, function: Py<PyAny>) -> PyResult<ParametricFunction> {
+        let manim = py.import("manim")?;
+        let axes_class  = manim.getattr("Axes")?;
+        let plot_method = axes_class.getattr("plot")?;
+        let plot_instance = plot_method.call1((function,))?;
+
+        Ok( ParametricFunction { instance: plot_instance.into() } )
+    }
+}
+
+#[pymethods]
+impl ParametricFunction {
+    #[new]
+    pub fn new (py: Python) -> PyResult<Self> {
+        let manim = py.import("manim")?;
+        let parametricunction_class  = manim.getattr("ParametricFunction")?;
+        let parametricfunction_mobject = parametricunction_class.call0()?;
+
+        Ok( ParametricFunction { instance: parametricfunction_mobject.into() } )
     }
 }
 
@@ -91,6 +149,14 @@ impl Animation {
         let uncreate_instance = uncreate_animation.call1((mobject,))?;
 
         Ok(Animation {inner: uncreate_instance.into()})
+    }
+    #[staticmethod]
+    pub fn fade_in (py: Python, mobject: Py<PyAny>) -> PyResult<Self> {
+        let manim = py.import("manim")?;
+        let fadein_animation = manim.getattr("FadeIn")?;
+        let fadein_instance = fadein_animation.call1((mobject,))?;
+
+        Ok(Animation {inner: fadein_instance.into()})
     }
 }
 
@@ -127,7 +193,10 @@ impl Scene {
 fn rust_manim(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Scene>()?;
     m.add_class::<Circle>()?;
+    m.add_class::<Axes>()?;
+    m.add_class::<ParametricFunction>()?;
     m.add_class::<Animation>()?;
+    m.add_class::<Square>()?;
     Ok(())
 }
 

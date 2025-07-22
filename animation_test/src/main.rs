@@ -8,11 +8,11 @@ fn main() {
         let circle = Circle::new(py).unwrap();
         let square = Square::new(py).unwrap();
 
-        scene.play(py, &Animation::create(py, circle.inner).unwrap()).unwrap();
-        scene.play(py, &Animation::uncreate(py, circle.inner).unwrap()).unwrap();
+        scene.play(py, &Animation::create(py, circle.instance).unwrap()).unwrap();
+        scene.play(py, &Animation::uncreate(py, circle.instance).unwrap()).unwrap();
         
-        scene.play(py, &Animation::create(py, square.inner).unwrap()).unwrap();
-        scene.play(py, &Animation::uncreate(py, square.inner).unwrap()).unwrap();
+        scene.play(py, &Animation::create(py, square.instance).unwrap()).unwrap();
+        scene.play(py, &Animation::uncreate(py, square.instance).unwrap()).unwrap();
 
         scene.render(py).unwrap();
     })
