@@ -88,7 +88,6 @@ impl Square {
 
 #[pymethods]
 impl Dot {
-
     #[new]
     pub fn new (py: Python) -> PyResult<Self> {
         let manim = py.import("manim")?;
@@ -110,13 +109,9 @@ impl Axes {
         Ok( Axes { instance: axes_mobject.into() } )
     }
 
-    pub fn plot (&self, py: Python, function: Py<PyAny>) -> PyResult<ParametricFunction> {
-        let manim = py.import("manim")?;
-        let axes_class  = manim.getattr("Axes")?;
-        let plot_method = axes_class.getattr("plot")?;
-        let plot_instance = plot_method.call1((function,))?;
-
-        Ok( ParametricFunction { instance: plot_instance.into() } )
+    pub fn plot<'py>(&self, py: Python<'py>, function: &Bound<'py, PyAny>) -> PyResult<ParametricFunction> {
+        let plotted_function = self.instance.call_method1(py, "plot", (function,))?;
+        Ok( ParametricFunction { instance: plotted_function.into() } )
     }
 }
 
@@ -135,28 +130,25 @@ impl ParametricFunction {
 #[pymethods]
 impl Animation {
     #[staticmethod]
-    pub fn create (py: Python, mobject: Py<PyAny>) -> PyResult<Self> {
+    pub fn create<'py>(py: Python<'py>, mobject: &Bound<'py, PyAny>) -> PyResult<Self> {
         let manim = py.import("manim")?;
-        let create_animation = manim.getattr("Create")?;
-        let create_instance = create_animation.call1((mobject,))?;
+        let creation_of_object = manim.call_method1("Create", (mobject,))?;
 
-        Ok(Animation {inner: create_instance.into()})
+        Ok(Animation {inner: creation_of_object.into()})
     }
     #[staticmethod]
-    pub fn uncreate (py: Python, mobject: Py<PyAny>) -> PyResult<Self> {
+    pub fn uncreate<'py>(py: Python<'py>, mobject: &Bound<'py, PyAny>) -> PyResult<Self> {
         let manim = py.import("manim")?;
-        let uncreate_animation = manim.getattr("Uncreate")?;
-        let uncreate_instance = uncreate_animation.call1((mobject,))?;
+        let uncreation_of_object = manim.call_method1("Uncreate", (mobject,))?;
 
-        Ok(Animation {inner: uncreate_instance.into()})
+        Ok(Animation {inner: uncreation_of_object.into()})
     }
     #[staticmethod]
-    pub fn fade_in (py: Python, mobject: Py<PyAny>) -> PyResult<Self> {
+    pub fn fade_in<'py>(py: Python<'py>, mobject: Py<PyAny>) -> PyResult<Self> {
         let manim = py.import("manim")?;
-        let fadein_animation = manim.getattr("FadeIn")?;
-        let fadein_instance = fadein_animation.call1((mobject,))?;
+        let fadein_of_object = manim.call_method1("FadeIn", (mobject,))?;
 
-        Ok(Animation {inner: fadein_instance.into()})
+        Ok(Animation {inner: fadein_of_object.into()})
     }
 }
 
@@ -199,4 +191,3 @@ fn rust_manim(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Square>()?;
     Ok(())
 }
-
