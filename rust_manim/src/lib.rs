@@ -3,35 +3,29 @@ use pyo3::types::PyAny;
 use clap::Parser;
 
 #[derive(Parser)]
-#[group(required = true, multiple = false)]
-struct VideoQuality {
-    #[arg(short='l', long="quality-low", help="Render the animation at 480p 15 fps", action = clap::ArgAction::SetTrue)]
-    low: bool,
-    #[arg(short='s', long="quality-high", help="Render the animation at 1080p 30 fps", action = clap::ArgAction::SetTrue)]
-    high: bool,
+struct Args {
+    #[arg(short='p', long="preview", help="Show preview of animation after rendering", action = clap::ArgAction::SetTrue)]
+    pub preview: bool,
+    #[arg(short='h', long="high", help="Set rendering quality to 1080p 60fps", action = clap::ArgAction::SetTrue)]
+    pub quality_high: bool,
+    #[arg(short='m', long="medium", help="Set rendering quality to 720p 30fps", action = clap::ArgAction::SetTrue)]
+    pub quality_medium: bool,
+    #[arg(short='l', long="low", help="Set rendering quality to 480p 15fps", action = clap::ArgAction::SetTrue)]
+    pub quality_low: bool,
 }
-
-impl VideoQuality {
+impl Args {
     fn get_quality(&self) -> String {
-        if self.low {
-            "low_quality".to_string()
-        } else if self.high {
-            "high_quality".to_string()
-        }
-        else {
-            "low-quality".to_string()
+        if self.quality_high == true {
+            return String::from("high_quality")
+        } else if self.quality_medium == true {
+            return String::from("medium_quality")
+        } else {
+            return String::from("low_quality")
         }
     }
 }
 
-#[derive(Parser)]
-struct Args {
-    #[arg(short='p', long="preview", help="Show preview of animation after rendering", action = clap::ArgAction::SetTrue)]
-    pub preview: bool,
-    #[clap(flatten)]
-    pub quality: VideoQuality,
-}
-
+// TYPES IMPORTED FROM MANIM
 #[pyclass]
 pub struct Circle {
     pub instance: Py<PyAny>,
@@ -62,6 +56,7 @@ pub struct Scene {
 }
 
 
+// IMPLEMENTING METHODS FOR THE ADDED TYPES
 #[pymethods]
 impl Circle {
     #[new]
@@ -109,7 +104,7 @@ impl Axes {
         Ok( Axes { instance: axes_mobject.into() } )
     }
 
-    pub fn plot<'py>(&self, py: Python<'py>, function: &Bound<'py, PyAny>) -> PyResult<ParametricFunction> {
+    pub fn plot<'py>(&self, py: Python<'py>, function: ) -> PyResult<ParametricFunction> {
         let plotted_function = self.instance.call_method1(py, "plot", (function,))?;
         Ok( ParametricFunction { instance: plotted_function.into() } )
     }
@@ -160,7 +155,7 @@ impl Scene {
 
         let args = Args::parse();
         let config = manim.getattr("config")?;
-        config.setattr("quality", args.quality.get_quality())?;
+        config.setattr("quality", args.get_quality())?;
         config.setattr("media_dir", "../media")?;
         config.setattr("preview", args.preview)?;
 
@@ -181,6 +176,8 @@ impl Scene {
     }
 }
 
+
+// IMPORTING EVERYTHING ADDED IN THE PYTHON MODULE
 #[pymodule]
 fn rust_manim(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Scene>()?;
