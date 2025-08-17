@@ -104,7 +104,7 @@ impl Axes {
         Ok( Axes { instance: axes_mobject.into() } )
     }
 
-    pub fn plot<'py>(&self, py: Python<'py>, function: ) -> PyResult<ParametricFunction> {
+    pub fn plot<'py>(&self, py: Python<'py>, function: f64) -> PyResult<ParametricFunction> {
         let plotted_function = self.instance.call_method1(py, "plot", (function,))?;
         Ok( ParametricFunction { instance: plotted_function.into() } )
     }
